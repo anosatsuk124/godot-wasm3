@@ -1,0 +1,11 @@
+[submodule "addons/godot-wasm3/godot-cpp"]
+	path = addons/godot-wasm3/godot-cpp
+	url = https://github.com/godotengine/godot-cpp
+	branch = 4.1
+[submodule "wasm3"]
+	path = addons/godot-wasm3/lib/wasm3
+	url = https://github.com/wasm3/wasm3.git
+	branch = main
+[submodule "addons/godot-wasm3/build-containers"]
+	path = addons/godot-wasm3/build-containers
+	url = https://github.com/godotengine/build-containers.git
