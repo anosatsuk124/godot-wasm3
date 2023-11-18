@@ -1,4 +1,5 @@
 #include "gdwasm3.h"
+#include "godot_cpp/variant/packed_string_array.hpp"
 #include <_types/_uint32_t.h>
 #include <_types/_uint64_t.h>
 #include <_types/_uint8_t.h>
@@ -122,14 +123,15 @@ uint64_t GDWasm3::func_i64(String fn_name, Array args) {
     check_m3_result(m3_CallV(fn));
   } else {
     uint32_t argc = args.size();
-    const void *argv[argc];
-    for (uint32_t i = 0; i < args.size(); i++) {
-      argv[i] = (void *)&args[i];
+    const char *argv[argc];
+    for (uint32_t i = 0; i < argc; i++) {
+      PackedByteArray arg = ((String)args[i]).to_utf8_buffer();
+      argv[i] = (const char *)arg.ptr();
 
-      ERR_PRINT(vformat("Argv %d: %s", i, (Variant)argv[i]));
+      ERR_PRINT(vformat("Argv %d: %s", i, argv[i]));
     }
 
-    check_m3_result(m3_Call(fn, argc, (const void **)argv));
+    check_m3_result(m3_CallArgv(fn, argc, argv));
   }
 
   auto ret_count = m3_GetRetCount(fn);
