@@ -1,5 +1,6 @@
 #include "gdwasm3.h"
 #include "godot_cpp/variant/packed_string_array.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 #include <_types/_uint32_t.h>
 #include <_types/_uint64_t.h>
 #include <_types/_uint8_t.h>
@@ -104,7 +105,36 @@ String GDWasm3::addr_as_string(int64_t addr) {
   return String(cstr);
 }
 
-uint64_t GDWasm3::func_i64(String fn_name, Array args) {
+/*
+              NIL,
+
+              // atomic types
+              BOOL,
+              INT,
+              FLOAT,
+              STRING,
+ */
+Variant GDWasm3::get_variant_ptr(Variant variant) {
+  Variant::Type type = variant.get_type();
+
+  switch (type) {
+  case Variant::Type::NIL:
+    return nullptr;
+  case Variant::Type::BOOL:
+    return bool(variant);
+  case Variant::Type::INT:
+    return int64_t(variant);
+  case Variant::Type::FLOAT:
+    return double(variant);
+  case Variant::Type::STRING:
+    return String(variant).to_utf8_buffer().ptrw();
+  default:
+    ERR_PRINT(vformat("Unsupported variant type: %d", type));
+    return nullptr;
+  }
+}
+
+int64_t GDWasm3::func_i64(String fn_name, PackedStringArray args) {
   IM3Function fn;
 
   check_m3_result(m3_FindFunction(&fn, this->runtime, fn_name.utf8().ptr()));
@@ -122,13 +152,18 @@ uint64_t GDWasm3::func_i64(String fn_name, Array args) {
   if (args.size() == 0) {
     check_m3_result(m3_CallV(fn));
   } else {
-    uint32_t argc = args.size();
-    const char *argv[argc];
-    for (uint32_t i = 0; i < argc; i++) {
-      PackedByteArray arg = ((String)args[i]).to_utf8_buffer();
-      argv[i] = (const char *)arg.ptr();
+    int64_t argc = args.size();
 
-      ERR_PRINT(vformat("Argv %d: %s", i, argv[i]));
+    CharString string_arr[argc];
+
+    for (int64_t i = 0; i < argc; i++) {
+      string_arr[i] = args[i].utf8();
+    }
+
+    const char *argv[argc];
+
+    for (int64_t i = 0; i < argc; i++) {
+      argv[i] = string_arr[i].ptrw();
     }
 
     check_m3_result(m3_CallArgv(fn, argc, argv));
@@ -137,12 +172,13 @@ uint64_t GDWasm3::func_i64(String fn_name, Array args) {
   auto ret_count = m3_GetRetCount(fn);
 
   if (ret_count == 0) {
-    return Variant();
+    return 0;
   }
 
-  uint64_t ret;
-  const void *ret_ptrs[] = {&ret};
-  check_m3_result(m3_GetResults(fn, 1, ret_ptrs));
+  int64_t ret;
+  check_m3_result(m3_GetResultsV(fn, &ret));
+  // const void *ret_ptrs[] = {&ret};
+  // check_m3_result(m3_GetResults(fn, 1, ret_ptrs));
 
   return ret;
 }

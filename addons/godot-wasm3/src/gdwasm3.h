@@ -6,6 +6,7 @@
 #include <_types/_uint8_t.h>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 #include <m3_api_wasi.h>
 #include <wasm3.h>
@@ -26,7 +27,7 @@ public:
                    PackedByteArray bytecode);
 
   // Variant func(String fn_name, Array args);
-  uint64_t func_i64(String fn_name, Array args);
+  int64_t func_i64(String fn_name, PackedStringArray args);
 
   String global_as_string(String global_name);
 
@@ -35,6 +36,8 @@ public:
   static String addr_as_string(int64_t ptr);
 
   void check_m3_result(M3Result result);
+
+  static Variant get_variant_ptr(Variant variant);
 
   void _init();
 
